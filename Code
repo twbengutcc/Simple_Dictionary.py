@@ -1,0 +1,217 @@
+import tkinter
+import tkinter as tk
+from tkinter import messagebox, simpledialog
+
+class Node:
+    def __init__(self, english, thai, word_type):
+        self.english = english
+        self.thai = thai
+        self.word_type = word_type
+        self.next = None
+        self.prev = None
+
+class Dictionary:
+    def __init__(self):
+        self.head = None
+        self.tail = None
+        self.current_node = None
+
+    def sort_words(self):
+        sorted_words = []
+        current = self.head
+        while current:
+            sorted_words.append(current)
+            current = current.next
+
+        sorted_words.sort(key=lambda x: x.english.lower())
+
+
+        self.head = sorted_words[0]
+        self.tail = sorted_words[-1]
+        for i in range(len(sorted_words) - 1):
+            sorted_words[i].next = sorted_words[i + 1]
+            sorted_words[i + 1].prev = sorted_words[i]
+        sorted_words[-1].next = None
+
+    def add_word(self, english, thai, word_type):
+        new_node = Node(english, thai, word_type)
+        if not self.head:
+            self.head = new_node
+            self.tail = new_node
+            self.current_node = new_node
+        else:
+            new_node.prev = self.tail
+            self.tail.next = new_node
+            self.tail = new_node
+
+        self.sort_words()
+
+    def search(self, english):
+        current = self.head
+        while current:
+            if current.english == english:
+                return current
+            current = current.next
+        return None
+
+    def get_next(self):
+        if self.current_node and self.current_node.next:
+            self.current_node = self.current_node.next
+            return f"{self.current_node.english} ({self.current_node.word_type}): {self.current_node.thai}"
+        else:
+            return "ไม่มีข้อมูลถัดไป"
+
+    def get_previous(self):
+        if self.current_node and self.current_node.prev:
+            self.current_node = self.current_node.prev
+            return f"{self.current_node.english} ({self.current_node.word_type}): {self.current_node.thai}"
+        else:
+            return "ไม่มีข้อมูลก่อนหน้า"
+
+    def delete_word(self, english):
+        current = self.head
+        while current:
+            if current.english == english:
+                if current.prev:
+                    current.prev.next = current.next
+                else:
+                    self.head = current.next
+
+                if current.next:
+                    current.next.prev = current.prev
+                else:
+                    self.tail = current.prev
+
+                if current == self.current_node:
+                    self.current_node = current.next
+
+                self.sort_words()
+                return True
+            current = current.next
+        return False
+
+class DictionaryApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("โปรแกรมพจนานุกรม")
+        self.dictionary = Dictionary()
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.english_label = tk.Label(self.root, text="ภาษาอังกฤษ:")
+        self.english_label.grid(row=0, column=0, pady=5)
+
+        self.english_entry = tk.Entry(self.root)
+        self.english_entry.grid(row=0, column=1, pady=5)
+
+        self.thai_label = tk.Label(self.root, text="คำแปลภาษาไทย:")
+        self.thai_label.grid(row=1, column=0, pady=5)
+
+        self.thai_entry = tk.Entry(self.root)
+        self.thai_entry.grid(row=1, column=1, pady=5)
+
+        self.type_label = tk.Label(self.root, text="ชนิดของคำ:")
+        self.type_label.grid(row=2, column=0, pady=5)
+
+        self.type_entry = tk.Entry(self.root)
+        self.type_entry.grid(row=2, column=1, pady=5)
+
+        self.search_button = tk.Button(self.root, text=">> ค้นหา <<", command=self.search)
+        self.search_button.grid(row=3, column=0, padx=5, pady=5)
+
+        self.add_button = tk.Button(self.root, text="[+] เพิ่มคำศัพท์", command=self.add_word)
+        self.add_button.grid(row=3, column=3, padx=5, pady=5)
+
+        self.delete_button = tk.Button(self.root, text="[X] ลบคำศัพท์", command=self.delete_word)
+        self.delete_button.grid(row=3, column=4, padx=5, pady=5)
+
+        self.result_listbox = tk.Listbox(self.root, height=5, width=60)
+        self.result_listbox.grid(row=4, column=0, columnspan=6, pady=5)
+
+        self.prev_button = tk.Button(self.root, text="[<] ก่อนหน้า", command=self.get_previous)
+        self.prev_button.grid(row=6, column=1, padx=5, pady=5)
+
+        self.next_button = tk.Button(self.root, text="ถัดไป [>]", command=self.get_next)
+        self.next_button.grid(row=6, column=3, padx=5, pady=5)
+
+    def add_word(self):
+        english = self.english_entry.get()
+        thai = self.thai_entry.get()
+        word_type = self.type_entry.get()
+
+        if self.dictionary.search(english):
+            tk.messagebox.showwarning("คำศัพท์ซ้ำ", f"มีคำศัพท์ '{english}' อยู่แล้ว ไม่สามารถเพิ่มซ้ำได้")
+            self.clear_entries()
+            return
+
+        if english and thai and word_type:
+            self.dictionary.add_word(english, thai, word_type)
+            self.result_listbox.delete(0, tk.END)
+            self.result_listbox.insert(tk.END, f"{english} ({word_type}): {thai}")
+
+
+            tk.messagebox.showinfo("เพิ่มคำศัพท์", f"เพิ่มคำศัพท์ '{english}' เรียบร้อยแล้ว!")
+        else:
+            tk.messagebox.showwarning("ข้อผิดพลาด", "กรุณากรอกข้อมูลให้ครบทุกช่อง")
+
+        self.clear_entries()
+
+    def search(self):
+        english = self.english_entry.get()
+        result = self.dictionary.search(english)
+        if result:
+            self.dictionary.current_node = result
+            self.result_listbox.delete(0, tk.END)
+            self.result_listbox.insert(tk.END, f"{result.english} ({result.word_type}): {result.thai}")
+            messagebox.showinfo("ค้นพบ", f"{result.english} ({result.word_type}): {result.thai}")
+        else:
+            messagebox.showinfo("ไม่พบ", "ไม่พบคำศัพท์ที่ค้นหา")
+
+        self.clear_entries()
+
+    def delete_word(self):
+        english = self.english_entry.get()
+        result = self.dictionary.search(english)
+        if result:
+            confirmation = simpledialog.askstring("ยืนยันการลบ",
+                                                  f"คุณต้องการลบคำศัพท์ '{result.english}' ใช่หรือไม่? (ใส่ 'yes' เพื่อยืนยัน)")
+            if confirmation and confirmation.lower() == 'yes':
+                success = self.dictionary.delete_word(english)
+                if success:
+                    self.result_listbox.delete(0, tk.END)
+                    self.result_listbox.insert(tk.END, "ลบคำศัพท์เรียบร้อยแล้ว")
+                    messagebox.showinfo("ลบคำศัพท์", "ลบคำศัพท์เรียบร้อยแล้ว")
+                else:
+                    self.result_listbox.delete(0, tk.END)
+                    self.result_listbox.insert(tk.END, "ผิดพลาดในการลบคำศัพท์")
+                    messagebox.showinfo("ผิดพลาด", "การลบคำศัพท์ผิดพลาด")
+            else:
+                self.result_listbox.delete(0, tk.END)
+                self.result_listbox.insert(tk.END, "ยกเลิกการลบคำศัพท์")
+                messagebox.showinfo("ยกเลิก", "ยกเลิกการลบคำศัพท์")
+        else:
+            self.result_listbox.delete(0, tk.END)
+            self.result_listbox.insert(tk.END, "ไม่พบคำศัพท์ที่ต้องการลบ")
+
+        self.clear_entries()
+
+    def get_next(self):
+        result = self.dictionary.get_next()
+        self.result_listbox.delete(0, tk.END)
+        self.result_listbox.insert(tk.END, result)
+
+    def get_previous(self):
+        result = self.dictionary.get_previous()
+        self.result_listbox.delete(0, tk.END)
+        self.result_listbox.insert(tk.END, result)
+
+    def clear_entries(self):
+        self.english_entry.delete(0, tk.END)
+        self.thai_entry.delete(0, tk.END)
+        self.type_entry.delete(0, tk.END)
+
+root = tk.Tk()
+app = DictionaryApp(root)
+
+
+root.mainloop()
