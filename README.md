@@ -61,4 +61,31 @@ Doubly Linked List คืออะไร
 
 ![image](https://github.com/twbengutcc/Simple_Dictionary.py/assets/150536808/79893855-d07b-4bf6-8de2-7a79d739c966)
 
+
 ตัวอย่างการใช้งานการลบคำศัพท์ code Delete Word ในส่วนของ class
+
+    def delete_word(self, english):
+        current = self.head
+        while current:
+            if current.english == english:
+                if current.prev:
+                    current.prev.next = current.next
+                else:
+                    self.head = current.next
+
+                if current.next:
+                    current.next.prev = current.prev
+                else:
+                    self.tail = current.prev
+
+                if current == self.current_node:
+                    self.current_node = current.next
+
+                self.sort_words()
+                return True
+            current = current.next
+        return False
+
+![image](https://github.com/twbengutcc/Simple_Dictionary.py/assets/150536808/c00797d4-6cb5-4607-a081-03240bf71771)
+
+![image](https://github.com/twbengutcc/Simple_Dictionary.py/assets/150536808/f607dcb1-94e6-480a-919e-c7890a44323e)
